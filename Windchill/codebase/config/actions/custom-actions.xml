@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE listofactions SYSTEM "actions.dtd">
+<listofactions>
+	<include href="config/actions/xworks/xworks-actions.xml"/>
+	<include href="config/actions/xworks/PromotionNotice-actions.xml"/>
+	<include href="config/actions/xworks/xworksExample-actions.xml"/>
+	<!-- 
+	<include href="config/actions/xworks/ECNDemo-actions.xml"/> 
+	 -->
+	 
+	<include href="config/actions/csc/csc-FolderManagement-actions.xml"/>
+	<include href="config/actions/csc/csc-PartClient-actions.xml"/>
+	<include href="config/actions/csc/csc-DocumentManagement-actions.xml"/>
+	<include href="config/actions/csc/csc-navigation-actions.xml"/>
+	
+	<include href="config/actions/csc/xworks/csc-xworks-actions.xml"/>
+	<include href="config/actions/training/training-actions.xml"/>
+	
+</listofactions>

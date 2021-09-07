@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Configuration SYSTEM "xconf.dtd">
+<Configuration targetFile="codebase/config/training/training.properties">
+	<AddToProperty name="wt.services.applicationcontext.WTServiceProviderFromProperties.customPropertyFiles"
+		 value="config/training/training.properties" />
+
+	<Service context="default" name="com.ptc.core.ui.validation.SimpleValidationFilter">
+		<Option serviceClass="com.training.filter.ShowActionToAdminFilter" selector="ShowActionToAdminFilter"
+			requestor="null" cardinality="duplicate" />
+		<Option serviceClass="com.training.filter.TrainingStateFilter" selector="TrainingStateFilter"
+			requestor="null" cardinality="duplicate" />
+	</Service>
+	
+	<Service context="default" name="com.ptc.core.ui.validation.UIComponentValidator">
+		<Option serviceClass="com.training.validator.TrainingStateValidator" selector="trainingAction" requestor="null"/>
+	</Service>
+	
+</Configuration>

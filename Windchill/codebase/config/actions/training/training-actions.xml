@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE listofactions SYSTEM "actions.dtd">
+<listofactions>
+	<objecttype name="training" resourceBundle="com.training.resource.TrainingRB">
+		<action name="trainingAction">
+            <command class="com.training.processor.TrainingProcessor" method="execute" />
+            <includeFilter name="TrainingStateValidator"/>
+            <includeFilter name="ShowActionToAdminFilter"/>
+        </action>
+        
+        <action name="trainingAction2">
+            <command class="com.training.processor.TrainingProcessor" method="execute2" />
+            <includeFilter name="ShowActionToAdminFilter"/>
+        </action>
+        
+        <action name="trainingAction3">
+            <command url="netmarkets/jsp/training/epm/trainingTab.jsp"/>
+            <includeFilter name="ShowActionToAdminFilter"/>
+        </action>
+        <action name="trainingAction4">
+            <command url="netmarkets/jsp/training/epm/exportToXlsx.jsp"/>
+            <includeFilter name="ShowActionToAdminFilter"/>
+        </action>
+	</objecttype>
+
+
+</listofactions>

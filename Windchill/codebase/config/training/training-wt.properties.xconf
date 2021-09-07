@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Configuration SYSTEM "xconf.dtd">
+<Configuration targetFile="codebase/wt.properties">
+
+	<Property default="com.training.listener.TrainingListenerService/com.training.listener.TrainingStandardListener" name="wt.services.service.99999"/>    
+	
+</Configuration>
