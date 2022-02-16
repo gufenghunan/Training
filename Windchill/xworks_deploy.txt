@@ -1,0 +1,484 @@
+**********************************************XWorks框架部署**********************************************
+Windchill 11.0 M030
+
+Step 1)
+------------------------------------------------------
+将部署包解压缩到$WT_HOME目录
+cd $WT_HOME
+jar xvf xworks-full-WC110_M030_20181129_161847.jar
+
+Step 2)
+------------------------------------------------------
+在Windchill shell中运行下面的命令
+cd $WT_HOME
+ant -f bin/swmaint.xml installSiteChanges
+
+Step 3)
+------------------------------------------------------
+运行Windchill Shell，运行下面的命令
+cd $WT_HOME
+ant -f $WT_HOME/bin/jsfrag_combine.xml
+
+运行下面的命令, 注册xworks-windchill.properties.xconf等配置文件
+xconfmanager -i codebase/com/ptc/xworks/config/xworks-windchill.properties.xconf
+xconfmanager -i codebase/WEB-INF/conf/configurations.properties.xconf
+xconfmanager -p
+
+运行下面的命令,编译ResourceBundle
+ResourceBuild.sh wt.access.AdHocAccessKeyRB
+ResourceBuild.sh wt.content.ContentRoleTypeRB
+
+Step 4) 创建XWorks框架所需的表和索引
+------------------------------------------------------
+创建表、索引以及序列
+来创建表和索引的SQL文件
+Windchill/db/sql3/ext/xworks/create_xml_tables.sql
+创建序列的SQL文件
+Windchill/db/sql3/ext/xworks/create_sequences.sql
+
+使用下面的命令行来运行上面的SQL文件，注意替换为实际的用户名和密码
+windchill --javaargs="-Dwt.tools.sql.dbUser=pdm -Dwt.tools.sql.dbPassword=pdm" wt.tools.sql.SQLCommandTool create_xworks_tables.sql $WT_HOME/db/sql3
+
+
+Step 5) 创建XWorks框架示例所需的表和索引,!!!正式环境不需要执行此步骤!!!
+------------------------------------------------------
+部署XWorks框架的示例流程
+Windchill Shell中运行下面的命令
+cd $WT_HOME
+windchill wt.load.LoadFileSet -file loadFiles/ext/xworks/LoadSet.xml -u wcadmin -p wcadmin -NOSERVERSTOP -UNATTENDED
+
+Step 6) !!!正式环境不需要执行此步骤!!!可选步骤，如果流程变量没有使用下面的类型，则可以不执行,
+------------------------------------------------------
+修改codebase/jarContents/Cust.bom,增加下面的内容
+com/ptc/xworks/collection/XArrayList.class
+com/ptc/xworks/collection/XHashMap.class
+com/ptc/xworks/collection/XHashSet.class
+com/ptc/xworks/collection/XLinkedHashMap.class
+com/ptc/xworks/collection/XLinkedHashSet.class
+com/ptc/xworks/collection/XLinkedList.class
+com/ptc/xworks/collection/XTreeMap.class
+com/ptc/xworks/collection/XTreeSet.class
+将xworks.jar中的目录com/ptc/xworks/collection下面的所有文件解压缩
+到codebase目录下
+
+然后运行
+ant -f codebase/MakeJar.xml custUpdate
+
+##########################报错修改#######################
+1.修改WT_HOME/codebase/WEB-INF/conf/configurations.properties、configurations.properties.xonf文件，
+	修改configuration.env、webservice.plm.hostname的值为实际主机域名（plm.janghogroup.com）
+	
+
+**********************************************XWorks框架部署结束**********************************************
+
+注意，部署完xworks后，如果按照测试机的操作，可能会因为添加的xworks的Demo导致jsp文件过大报错，比如新建文档界面出现jsp错误，此时需要在tomcat下的conf/web.xml下加入配置：
+		<init-param>
+            <param-name>mappedfile</param-name>
+            <param-value>false</param-value>
+        </init-param>
+加在<servlet-class>org.apache.jasper.servlet.JspServlet</servlet-class>标签内即可
+
+
+
+**********************************************代码部署及系统配置**********************************************
+1.sql执行
+	/JangHo/Windchill/db/sql3目录下的create_change_tables.sql,create_JHReleaseActivity_Table.sql需要执行
+	create_ProjectAttrLink_Table.sql,create_ProjectAttrLink_Index.sql文件根据检查是否存在，然后按需要执行
+	
+	************江河正式环境部署，xml表格创建需要修改列长度***********
+	a_xml_related_object_group表的 PBO_ID、PBO_BRANCH_ID、PROCESS_ID
+	alter table a_xml_related_object_group modify PBO_ID NUMBER(20,0);
+	alter table a_xml_related_object_group modify PBO_BRANCH_ID NUMBER(20,0);
+	alter table a_xml_related_object_group modify PROCESS_ID NUMBER(20,0);
+	
+	a_xml_relatedobjectmember表的IDA2A2、BRANCH_ID
+	alter table a_xml_relatedobjectmember modify IDA2A2 NUMBER(20,0);
+	alter table a_xml_relatedobjectmember modify BRANCH_ID NUMBER(20,0);
+	
+	a_xml_links表的 CHILD_ID、PARENT_ID
+	alter table a_xml_links modify CHILD_ID NUMBER(20,0);
+	alter table a_xml_links modify PARENT_ID NUMBER(20,0);
+
+
+2.jar文件部署
+	拷贝工程/JangHo/Windchill/codebase/WEB-INF/lib目录下的文件到Windchill服务器的WT_HOME/codebase/WEB-INF/lib目录
+	
+3.class、jsp、task、js、配置文件部署
+	3.1 class文件部署
+	修改SAP集成配置信息
+	修改类/JangHo/src/java/com/jh/integration/IntegrationConst.java
+		SAP_INSTANCE_CLINETNAME=800
+		SAP_INSTANCE_HOST=10.0.1.37
+		SAP_INSTANCE_USERID=ESISYS
+		SAP_INSTANCE_PASSWORD=ESISYS
+	然后编译部署
+	JangHo/bin目录下的com、ext、wt文件目录拷贝到Windchill服务器的WT_HOME/codebase目录
+	
+	3.2 同步事件定制的java文件部署
+	变更流程定制了三个同步事件“ECR已取消”、“ECR评审已通过”、“订单库存处理结果”
+	新增java文件拷贝到Windchill服务器的WT_HOME/src目录下对应的文件目录
+	/JangHo/src/java/wt/workflow/engine/WfCustomEventTypeResource.java
+	/JangHo/src/java/wt/workflow/engine/WfCustomEventTypeResource_zh_CN.java
+	/JangHo/src/java/wt/workflow/robots/synchEventResource_zh_CN.java
+	/JangHo/src/java/wt/workflow/robots/synchEventResource.java
+	
+    部署后，编译class文件，在Windchill shell下执行以下命令：
+	ant -f $WT_HOME/bin/tools.xml class -Dclass.includes=wt/workflow/robots/synchEventResource.java
+	ant -f $WT_HOME/bin/tools.xml class -Dclass.includes=wt/workflow/robots/synchEventResource_zh_CN.java
+    ant -f $WT_HOME/bin/tools.xml class -Dclass.includes=wt/workflow/engine/WfCustomEventTypeResource.java
+	ant -f $WT_HOME/bin/tools.xml class -Dclass.includes=wt/workflow/engine/WfCustomEventTypeResource_zh_CN.java
+	
+	cd $WT_HOME
+	ant -f codebase/MakeJar.xml custUpdate
+	
+	3.3 jsp文件部署
+	/JangHo/Windchill/codebase/netmarkets/jsp文件目录下的文件目录拷贝到Windchill服务器的WT_HOME/codebase/netmarkets/jsp目录
+	/JangHo/Windchill/wtSafeArea/siteMod/codebase/netmarkets/jsp文件目录下的文件拷贝到Windchill服务器的WT_HOME/codebase/netmarkets/jsp的对应目录下
+	/JangHo/Windchill/wtSafeArea/siteMod/codebase/WEB-INF/jsp/xworks文件目录下的文件拷贝到Windchill服务器的WT_HOME/codebase/WEB-INF/jsp/xworks目录下
+	
+	3.4 js文件部署
+	/JangHo/Windchill/codebase/netmarkets/javascript目录下所有js文件拷贝到Windchill服务器的WT_HOME/codebase/netmarkets/javascript的对应目录下
+	/JangHo/Windchill/wtSafeArea/siteMod/codebase/netmarkets/jsp/util/begin_custom.jspf文件拷贝到Windchill服务器的WT_HOME/codebase/netmarkets/jsp/util目录下	
+	/JangHo/Windchill/wtSafeArea/siteMod/codebase/netmarkets/javascript目录下的js文件拷贝到Windchill服务器的WT_HOME/codebase/netmarkets/javascript的对应目录下
+	然后在Windchill shell下执行以下命令：
+		cd $WT_HOME
+		ant -f $WT_HOME/bin/jsfrag_combine.xml
+	
+	3.5 配置文件部署
+		3.5.1 定制角色部署
+		/JangHo/Windchill/wtCustom/wt/project目录下文件拷贝到Windchill服务器的WT_HOME/wtCustom/wt/project目录下
+		在Windchill shell下执行编译命令：
+			ResourceBuild.sh wt.project.RoleRB
+			cd $WT_HOME
+			ant -f codebase/MakeJar.xml custUpdate
+	
+		3.5.2 拉模文件配置
+		/JangHo/Windchill/wtSafeArea/siteMod/codebase目录下的descendentRegistry.properties、associationRegistry.properties、modelRegistry.properties文件
+		拷贝到Windchill服务器的WT_HOME/codebase目录
+		3.5.3 action文件部署
+		config.actions目录下的xml文件部署到Windchill服务器的WT_HOME/codebase/config/actions目录下
+		/JangHo/Windchill/wtSafeArea/siteMod/codebase/config/actions/PartClient-actionmodels.xml文件拷贝到Windchill服务器的WT_HOME/codebase/config/actions目录下
+		3.5.4 conf或xml文件部署
+		config.com.jh.configFile、config.jh、config.mvc目录下的文件拷贝到Windchill服务器的WT_HOME/codebase/config目录下
+		com.ptc.xworks.config目录下的文件拷贝到Windchill服务器的WT_HOME/codebase/com/ptc/xworks/config目录下
+		/JangHo/Windchill/wtSafeArea/siteMod/codebase/WEB-INF目录下MVCDispatcher-servlet.xml文件拷贝到Windchill服务器的WT_HOME/codebase/WEB-INF目录下
+		
+		注册janghogroup.properties.xconf等配置文件
+			xconfmanager -i codebase/config/jh/janghogroup.properties.xconf
+			xconfmanager -p
+		
+		3.5.5 Webservice部署
+		/JangHo/Windchill/wtSafeArea/siteMod/codebase/WEB-INF/wsdl目录下的文件拷贝到Windchill服务器的WT_HOME/codebase/WEB-INF/wsdl目录下
+		/JangHo/Windchill/wtSafeArea/siteMod/codebase/WEB-INF目录下的sun-jaxws.xml文件拷贝到Windchill服务器的WT_HOME/codebase/WEB-INF目录下
+
+	3.6 tasks文件部署
+		/JangHo/Windchill/tasks/com/jh目录下的文件拷贝到Windchill服务器的WT_HOME/tasks/com/jh目录下
+		/JangHo/Windchill/tasks/com/ptc/windchill/esi目录下的文件拷贝到Windchill服务器的WT_HOME/tasks/com/ptc/windchill/esi目录下
+		
+	3.7 pickerAttributes.xml文件部署
+		/JangHo/Windchill/codebase/pickerAttributes.xml文件拷贝到Windchill服务器的WT_HOME/codebase目录下
+		
+	3.8 CAD图纸上传部署
+		3.8.1 配置CAD图纸上传目录/mnt/CAD（CAD插件上传图纸的存放目录）
+		
+	3.9 部署完成后重启系统	
+		
+		
+4.生命周期模板、工作流模板、任务表单模板导入
+	4.1 任务表单模板导入	/JangHo/Windchill/codebase/netmarkets/jsp/customtemplates/tasktemplate.zip
+
+	4.2 生命周期模板导入	/JangHo/Windchill/loadFiles/com/jh/lifecycle/lc.zip
+	组织下的生命周期模板【Part LC】、【工程属性】、【Promotion Request】导入
+	4.3 工作流模板导入 	/JangHo/Windchill/loadFiles/com/jh/workflow/wf.zip
+
+5.类型属性配置
+	5.1 需要检查代码中设置部件分类属性使用的内部名称是否和系统一致？（代码中使用的是"CSMPartClassification"）
+		5.1.1 /JangHo/src/java/com/jh/standard/PartUtil.java的【646】行代码
+		还有其他地方通过搜索检查
+		
+		5.1.2 部件的分类属性Classification显示名称需要改成"小类"
+		
+		5.1.3 分类管理-分类树的根节点（Part Classification）的显示名称改成"部件分类"
+		
+
+	5.2 类型属性修改配置
+		5.2.1 全局属性添加
+		BOM属性组织下  		工程属性编号 	bomgcsh 	字符串
+		虚拟成品属性组织下	采购申请号		cgssh		字符串
+		
+		
+		5.2.2 类型添加属性（全局属性）	
+		部件使用关系					工程属性编号 	bomgcsh
+		提料单虚拟成品					采购申请号		cgssh
+		文档子类型-提料单   			采购申请号		cgssh
+	    部件-批特性号-蜂窝板批特性号
+		删除原来的 内表面颜色 、外表面颜色 、内表面处理方式 、外表面处理方式 四个属性
+		新建 内表面颜色 nbmys_fwb  、外表面颜色 wbmys_fwb 、内表面处理方式 nbmclfs_fwb 、外表面处理方式 wbmclfs_fwb四个属性
+		
+		
+6.工程属性Datautility配置
+	类型属性管理器 ——> 部件使用关系 ——> 布局（Part Structure Attributes）——> 工程属性编号
+	编辑 ——> 弹出页面【数据实用程序 ID】的输入框中输入 gcshNumberDataUtility
+		
+
+7.委派配置
+	存储库类型 com.ptc.windchill
+	类型标识符 com.infoengine.soap
+	名称						源URL
+	GetBOMVal   		/com/jh/soap/GetBOMVal.xml
+	GetFolderName		/com/jh/soap/GetFolderName.xml
+	UpdFile				/com/jh/soap/UpdFile.xml
+	QueryEPMDocuments	/com/jh/soap/QueryEPMDocuments.xml
+	GetSecMdl			/com/jh/soap/GetSecMdl.xml
+	GetPropStrsByCode	/com/jh/soap/GetPropStrsByCode.xml
+	GetPropCodeByTypeNo	/com/jh/soap/GetPropCodeByTypeNo.xml
+	GetProjProps		/com/jh/soap/GetProjProps.xml
+	GetProjPropByCode	/com/jh/soap/GetProjPropByCode.xml
+	GetProjNoByName		/com/jh/soap/GetProjNoByName.xml
+	GetProjNameByNo		/com/jh/soap/GetProjNameByNo.xml
+	GetMdlByParVal		/com/jh/soap/GetMdlByParVal.xml
+	GetBaseMdlByCode	/com/jh/soap/GetBaseMdlByCode.xml
+	GetAllFileFromWS	/com/jh/soap/GetAllFileFromWS.xml
+
+8.检查邮件服务器配置
+	
+9.检查SAP集成地址、帐号信息修改
+
+
+**************************************部署完成后系统配置修改*******************************
+1.系统权限修改
+	1.1 产品库【嶺海温泉大酒店】的权限恢复，需要在上下文：站点，组织-JH  域：/Default/PDM下新建一条管理员权限应用后，删除操作完成后即可
+	1.2 设置除管理员外去除设置状态权限 域：/Default/PDM	上下文：站点, 组织 - JH 下添加如下权限：
+		类型 wtobject 参与者  Administrator组 应用于 全部(参与者除外)  设置状态、管理-绝对拒绝权限
+
+2.首选项配置修改
+	修改首选项设置，将首选项“部件到文档关联逻辑”的值改成“是”
+	修改首选项设置，将首选项“自动启动 ESI 工作流”的值改成“否”
+	修改首选项设置，将首选项“工作流进程管理器链接显示”的值改成“所有内部用户”
+	修改首选项设置，将首选项“显示文件夹域”的值改成“是”
+	修改首选项设置，将首选项“以逗号分隔的文档生命周期状态列表，用于向部件显示关联参考文档。”的值改成""
+
+3.队列创建、修改配置
+	3.1 允许的最大队列数，通过属性控制   wt.queue.max.processQueues
+	修改命令如下：
+	xconfmanager -s wt.queue.max.processQueues=100 -t codebase/wt.properties -p
+
+	3.2 wt.properties新增关于队列使用属性 WfExpressQueuePool=4
+	xconfmanager -s WfExpressQueuePool=4 -t codebase/wt.properties -p
+
+	3.3 后台队列管理  windchill wt.queue.QueueManager
+	删除无用队列 WfExpressQueue43、WfUserWorkQueue_XXXX、WfPropagationQueue_XXXX、 
+	WfSharedUserWorkQueue2后面的队列、WfSharedPropagationQueue2后的队列
+
+	3.4 队列池配置（需要检查是否需要配置，修改队列类型为【进程->汇聚】）
+	WC9.0系统上使用的属性配置如下：
+	wt.workflow.engine.userWorkPoolSize=3
+	wt.workflow.engine.propagationPoolSize=3
+	xconfmanager -s wt.workflow.engine.userWorkPoolSize=3 -t codebase/wt.properties -p
+	xconfmanager -s wt.workflow.engine.propagationPoolSize=3 -t codebase/wt.properties -p
+
+	修改队列类型 (WfPropagationQueue、WfUserWorkQueue、WfSharedUserWorkQueue0、WfSharedUserWorkQueue1、WfSharedUserWorkQueue2)
+	UPDATE processingqueue SET randomaccessqueue = 1 WHERE name IN ('WfPropagationQueue','WfSharedPropagationQueue0','WfSharedPropagationQueue1','WfSharedPropagationQueue2', 
+	'WfUserWorkQueue', 'WfSharedUserWorkQueue0', 'WfSharedUserWorkQueue1', 'WfSharedUserWorkQueue2');
+	UPDATE processingqueue SET randomaccessqueue = 1 WHERE name IN ('DeleteCompletedWorkItemsQueue','forumEventPropogationQueue');
+	COMMIT;
+
+	3.5 修改队列池数量（导入历史数据需要，默认值是12）
+	xconfmanager -s wt.queue.execEntriesCount=30 -t codebase/wt.properties -p
+	
+	3.6 创建刷历史批号和工程属性需要使用的队列
+	在队列管理的页面创建【历史数据刷新】
+
+
+4.索引重建
+	4.1 修改配置，只索引元数据，使用 xconfmanager 在 wt.properties 添加属性
+	执行以下命令
+	xconfmanager -s wt.index.IndexAndSearchMetaDataOnly=true -t codebase/wt.properties -p
+	4.2 创建索引
+	在 Windchill 外壳程序中执行 windchill wt.index.BulkIndexTool 来启动 Windchill Bulk Index Tool 
+	执行 Bulk Index Tool 的选项 8 来删除索引数据
+	执行 Bulk Index Tool 的选项 1 来索引所有的 Windchill 数据
+	
+	
+*************************************历史数据更新处理****************************************
+xconfmanager -s wt.queue.execEntriesCount=12 -t codebase/wt.properties -p
+
+暂时关闭索引（数据刷完后开启）
+xconfmanager -s com.ptc.windchill.partslink.index.enabled=false -t codebase/wt.properties -p
+xconfmanager -s wt.index.enabled=false -t codebase/wt.properties -p
+
+1.批特性号刷新
+	windchill ext.jh.datahandle.batchcode.UpdateBatchCode -u wcadmin -p ptc123 -f Test1_PH_LIST204.xlsx -l fwb -s 1 -t 100 -n 35
+	windchill ext.jh.datahandle.batchcode.UpdateBatchCode -u wcadmin -p ptc123 -f PH_LIST-2060-1.xlsx -l jgj -s 1 -t 100 -n 3
+	windchill ext.jh.datahandle.batchcode.UpdateBatchCode -u wcadmin -p ptc123 -f PH_LIST-2050-1.xlsx -l wxbc -s 1 -t 100 -n 3
+	windchill ext.jh.datahandle.batchcode.UpdateBatchCode -u wcadmin -p ptc123 -f PH_LIST-2040-1.xlsx -l fwb -s 1 -t 100 -n 3
+	windchill ext.jh.datahandle.batchcode.UpdateBatchCode -u wcadmin -p ptc123 -f PH_LIST-2030-1.xlsx -l sc -s 1 -t 100 -n 3
+	windchill ext.jh.datahandle.batchcode.UpdateBatchCode -u wcadmin -p ptc123 -f PH_LIST-2020-1.xlsx -l lb -s 1 -t 100 -n 3
+	windchill ext.jh.datahandle.batchcode.UpdateBatchCode -u wcadmin -p ptc123 -f PH_LIST-1030-1.xlsx -l lsb -s 1 -t 100 -n 3
+	windchill ext.jh.datahandle.batchcode.UpdateBatchCode -u wcadmin -p ptc123 -f PH_LIST-1020-1.xlsx -l gxc -s 1 -t 100 -n 3
+	windchill ext.jh.datahandle.batchcode.UpdateBatchCode -u wcadmin -p ptc123 -f PH_LIST-1010-1.xlsx -l lxc -s 1 -t 100 -n 30
+	
+	
+
+2.工程属性关联刷新
+	windchill ext.jh.datahandle.gcsx.UpdateGcsx -u wcadmin -p ptc123 -f GcsxReresh.xlsx
+	
+	
+3.不唯一的批号刷新
+	windchill ext.jh.datahandle.batchcode.BrushBatch -u wcadmin -p ptc123 -t fwb -f GcshTest1.xlsx
+	
+4.刷工程编号、工序BOM、工程属性发送SAP
+	工程编号			windchill com.jh.integration.HistoryReviewZZCCPUtil
+	工程属性发送SAP		windchill com.jh.integration.HistorySendAllProjectAttrDoc
+	发送历史工序BOM
+	转MBOM不需要sendsap
+	windchill com.jh.integration.HistoryBatchSendBOM /ptc/132.xls sendsap
+	
+5.工序明细表导出
+	###exportGxmxb  exportZpmxb
+	windchill ext.jh.datahandle.mxbexport.MxbExport -u wcadmin -p ptc123 -t exportGxmxb
+
+*************************************开发记录****************************************
+
+1.同步事件定制
+	变更流程定制了两个同步事件“ECR已取消”、“ECR评审已通过”
+	新增java文件
+	/JangHo/src/java/wt/workflow/engine/WfCustomEventTypeResource.java
+	/JangHo/src/java/wt/workflow/engine/WfCustomEventTypeResource_zh_CN.java
+	/JangHo/src/java/wt/workflow/robots/synchEventResource_zh_CN.java
+	/JangHo/src/java/wt/workflow/robots/synchEventResource.java
+	
+    部署后，编译class文件
+	ant -f $WT_HOME/bin/tools.xml class -Dclass.includes=wt/workflow/robots/synchEventResource.java
+	ant -f $WT_HOME/bin/tools.xml class -Dclass.includes=wt/workflow/robots/synchEventResource_zh_CN.java
+    ant -f $WT_HOME/bin/tools.xml class -Dclass.includes=wt/workflow/engine/WfCustomEventTypeResource.java
+	ant -f $WT_HOME/bin/tools.xml class -Dclass.includes=wt/workflow/engine/WfCustomEventTypeResource_zh_CN.java
+
+2.设置参与者功能开发、部署
+	新增java文件
+	包路径ext.jh.setparticipants下所有文件
+	
+	不同流程设置参与者功能部署
+	1).修改xworks客制任务页面，需要添加下面内容，用于显示设置参与者表格
+	<% 
+		String nodeId = WfUtil.getActivityTemplateDescription(workItem);
+		String componentId = "ext.jh.setparticipants.mvc.builder.SetParticipantsAppFormTableBuilder|" + nodeId;
+		if (WfUtil.checkIsSetParticipantActivity(workItem)) {
+			String setPOperationType = "EDIT"; 
+			if (workItem.isComplete()) {
+				setPOperationType = "VIEW";
+			}else{
+				//List<XmlObject> result = WfUtil.getBeansForActivity(wid, pboOid);
+			}
+	%>
+	<jsp:include page="${mvc:getComponentURL('ext.jh.setparticipants.mvc.builder.SetParticipantsAppFormTableBuilder')}">
+		<jsp:param name="operationType" value="<%=setPOperationType %>" />
+		<jsp:param name="contextObjectClassName" value="ext.jh.setparticipants.bean.ProcessTeamMemberBean"/>
+		<jsp:param name="componentId" value="<%=componentId %>"/>
+		<jsp:param name="layoutForView" value="<%=layoutForTable %>" />
+		<jsp:param name="applicationFormOid" value="<%=pboOid %>" />
+		<jsp:param name="wid" value="<%=wid %>" />
+		<jsp:param name="isComplete" value="<%=isComplete %>" />
+	</jsp:include>
+	<% 
+		}
+	%>
+	2).修改任务页面的XXXXXXXXXProcessorDelegate.java中copyAttributes方法，添加参与者信息保存功能
+	参考工艺变更设置参与者任务页面
+	// 工艺变更节点
+	if (itemdec.contains(ChangeConst.ECA_GYSUBMIT_ID)) {
+		if (xmlObjectInDatabase instanceof ProcessTeamMemberBean) {
+			/*** 公用代码 ****/
+			List<String> clist = WfUtil.getSetParticipantsBuilderColumnNames(workItem);
+			attributeNames = clist.toArray(new String[clist.size()]);
+			AttributeUtils.copyAttributes(xmlObjectFromWeb, xmlObjectInDatabase, attributeNames);
+		}
+	}
+	3).增加任务完成的trigger类，如果已经存在，则添加将设置参与者bean中信息设置到进程团队中功能
+	参考工艺变更设置参与者
+	if (ChangeConst.ECA_GYSUBMIT_ID.equals(nodeId)) { // 工艺变更
+		if (TransitionTriggerConfig.TRANSITION_COMPLETE.equals(transition)) { // 完成任务
+			WfProcess process = WfUtil.getProcess(self);
+			if (process != null) {
+				String activityName = activity.getName();
+				String beanName = WfUtil.getSetParticipantRecordProcessName(process, activityName);
+				WTContainer container = WfUtil.getContainerByPbo(pbo);
+				if (container != null) {
+					String coid = container.getPersistInfo().getObjectIdentifier().toString();
+					List<XmlObject> beans = WfUtil.getECNXmlObjectBeanByPersistable(coid, beanName);
+					try {
+						// 任务节点需要设置参与者的角色和用户
+						Map<Role, Set<WTUser>> roleMap = WfUtil.getRoleToUsersForBean(beans, activity);
+						CustWorkflowHelper.initTeamMembersForTrigger(pbo, objectRef, roleMap);
+					} catch (Exception e) {
+						e.printStackTrace();
+						throw new WTException("设置参与者失败：" + e.getLocalizedMessage());
+					}
+				}
+			}
+		}
+	}
+
+3.ootb的js文件修改（选定文件夹搜索，不输入内容直接跳到高级搜索页面）
+	修改/ptc/Windchill_11.0/Windchill/codebase/netmarkets/javascript/util/jsfrags目录下的searchInFolder.jsfrag文件
+	运行Windchill Shell，运行下面的命令
+	cd $WT_HOME
+	ant -f $WT_HOME/bin/jsfrag_combine.xml
+	修改内容如下：
+	  /**
+	 * Fires search. Passes all the parameters to the Search.jsp page.
+	 * @param {PTC.jca.TreeGrid} table
+	 * @param event
+	 */
+	PTC.search.folder.fireSearch = function(table, event) {
+		var searchTerm = table.sifTextField.getValue();
+		//var checkValid = PTC.search.folder.checkValid(searchTerm);
+		
+		//if(checkValid){
+		//	searchTerm = encodeURIComponent(searchTerm);
+		//	var urlString = "wtcore/jsp/com/ptc/windchill/search/Search.jsp?folderSearchTextBox=true&fireSearch=true";
+		//	var additionalSearchParam = PTC.search.folder.getSelected(table);
+		//	var url = urlString + "&searchType=wt.fc.Persistable"+additionalSearchParam+searchTerm;
+		//	loadAdvSearchPage(event,url);
+		//}
+		//else {
+		//	return false;
+		//}
+		
+		//add by tl 2019/8/2
+		if(searchTerm == ''){
+			searchTerm = encodeURIComponent(searchTerm);
+			var urlString = "wtcore/jsp/com/ptc/windchill/search/Search.jsp?folderSearchTextBox=true&fireSearch=true";
+			var additionalSearchParam = PTC.search.folder.getSelected(table);
+			loadAdvSearchPage(event, "wtcore/jsp/com/ptc/windchill/search/Search.jsp?folderSearchTextBox=true&searchType=wt.fc.Persistable" +additionalSearchParam+searchTerm);
+		} else {
+			var checkValid = PTC.search.folder.checkValid(searchTerm);
+			if(checkValid){
+				searchTerm = encodeURIComponent(searchTerm);
+				var urlString = "wtcore/jsp/com/ptc/windchill/search/Search.jsp?folderSearchTextBox=true&fireSearch=true";
+				var additionalSearchParam = PTC.search.folder.getSelected(table);
+				var url = urlString + "&searchType=wt.fc.Persistable"+additionalSearchParam+searchTerm;
+				loadAdvSearchPage(event,url);
+			}else {
+				return false;
+			}
+		}
+	};
+
+	
+问题记录：
+1. 部署xworks后完成任务非常慢，给WTAclEntry得owner字段创建索引
+create index WTAclEntry$CS870907 on WTAclEntry(owner) tablespace INDX online;
+2.查询usagelink慢，给stringvalue添加索引
+create index StringValue$CS164048 on StringValue(idA3A6,value,classnamekeyA4,idA3A4) tablespace INDX online;
+3.发布记录表数据达到了1700W，添加索引
+create index StringValue$CS191028 on JHReleaseActivity(RELEASABLEOBJECT,TARGET,RELEASECLASS,CREATOR) tablespace INDX online;
+create index JhRelease$CS191030 on JHReleaseActivity(description,RELEASECLASS,status,target) tablespace INDX online;
+
+
+<Property name="wt.workflow.engine.propagationPoolSize" overridable="true" targetFile="codebase/wt.properties" value="10"/>
+<Property name="wt.workflow.engine.userWorkPoolSize" overridable="true" targetFile="codebase/wt.properties" value="10"/>
+
+
+
+	
