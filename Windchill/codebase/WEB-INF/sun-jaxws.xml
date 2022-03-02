@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<endpoints xmlns="http://java.sun.com/xml/ns/jax-ws/ri/runtime"
+           xmlns:jws="http://java.sun.com/xml/ns/javaee"
+           version="2.0">
+   <endpoint implementation="com.ptc.jws.service.com.ptc.windchill.ws.TwxIEWebServiceImpl"
+             name="TwxIEWebService"
+             url-pattern="/servlet/TwxIEWebService">
+      <jws:handler-chains>
+         <jws:handler-chain>
+            <jws:handler>
+               <jws:handler-class>com.ptc.jws.security.impl.WebServerAuthenticated</jws:handler-class>
+            </jws:handler>
+         </jws:handler-chain>
+      </jws:handler-chains>
+   </endpoint>
+   <endpoint implementation="com.ptc.jws.service.com.ptc.windchill.enterprise.requirement.ws.RMWebServicesImpl"
+             name="RMWebServices"
+             url-pattern="/servlet/RMWebServices">
+      <jws:handler-chains>
+         <jws:handler-chain>
+            <jws:handler>
+               <jws:handler-class>com.ptc.jws.security.impl.WebServerAuthenticated</jws:handler-class>
+            </jws:handler>
+         </jws:handler-chain>
+      </jws:handler-chains>
+   </endpoint>
+ 
+   
+   <endpoint implementation="com.training.webservice.TrainingWebService"
+             name="TrainingWebService"
+             url-pattern="/servlet/webservice/integration/TrainingWebService">
+   </endpoint>
+   
+   
+</endpoints>
