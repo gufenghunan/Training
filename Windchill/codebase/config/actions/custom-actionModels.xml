@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE actionmodels SYSTEM "actionmodels.dtd">
+<actionmodels>
+	<!--  there is a bug in Windchill 11.0 F000, use include will cause a exception! -->
+	<include href="config/actions/xworks/xworks-actionModels.xml"/>
+	<include href="config/actions/xworks/PromotionNotice-actionModels.xml"/>
+	<include href="config/actions/xworks/xworksExample-actionModels.xml"/>
+	<include href="config/actions/xworks/Promotable-actionModels.xml"/>
+	<include href="config/actions/xworks/customizedTaskTab-actionModel.xml"/>
+	<!-- 
+	<include href="config/actions/xworks/ECNDemo-actionModels.xml"/>
+	 -->
+	 
+	<include href="config/actions/csc/csc-FolderManagement-actionModels.xml"/>
+	<include href="config/actions/csc/csc-PartClient-actionModels.xml"/>
+	<include href="config/actions/csc/csc-DocumentManagement-actionModels.xml"/>
+	<include href="config/actions/csc/csc-navigation-actionModels.xml"/>
+	
+	<include href="config/actions/csc/xworks/csc-xworks-actionModels.xml"/>
+	<include href="config/actions/training/training-actionModels.xml"/>
+	
+</actionmodels>
